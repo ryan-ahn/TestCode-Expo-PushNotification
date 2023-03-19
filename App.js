@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Platform, BackHandler, SafeAreaView } from 'react-native';
+import { Platform, BackHandler, SafeAreaView, Button } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 import * as Device from 'expo-device';
@@ -13,26 +13,25 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// 토튼 서버로 보내기
-// async function sendPushNotification(expoPushToken) {
-//   const message = {
-//     to: expoPushToken,
-//     sound: 'default',
-//     title: 'Original Title',
-//     body: 'And here is the body!',
-//     data: { someData: 'goes here' },
-//   };
+async function sendPushNotification(expoPushToken) {
+  const message = {
+    to: expoPushToken,
+    sound: 'default',
+    title: 'Original Title',
+    body: 'And here is the body!',
+    data: { someData: 'goes here' },
+  };
 
-//   await fetch('https://exp.host/--/api/v2/push/send', {
-//     method: 'POST',
-//     headers: {
-//       Accept: 'application/json',
-//       'Accept-encoding': 'gzip, deflate',
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify(message),
-//   });
-// }
+  await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Accept-encoding': 'gzip, deflate',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(message),
+  });
+}
 
 async function registerForPushNotificationsAsync() {
   let token;
@@ -50,6 +49,7 @@ async function registerForPushNotificationsAsync() {
       return;
     }
     token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log(token);
   } else {
     alert('Must use physical device for Push Notifications');
   }
@@ -85,6 +85,11 @@ export default function App(props) {
     setBackButtonEnabled(navState.canGoBack);
   }
 
+  const askPermission = async () => {
+    const { status } = await Notifications.requestPermissionsAsync();
+    console.log(status);
+  };
+
   useEffect(() => {
     // Handle back event
     function backHandler() {
@@ -113,7 +118,7 @@ export default function App(props) {
 
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        setUri('https://www.longblack.co/weekend');
+        setUri('https://www.longblack.co/note/620');
       });
 
     return () => {
@@ -138,6 +143,13 @@ export default function App(props) {
         onNavigationStateChange={onNavigationStateChange}
         source={{ uri: uri }}
       />
+      <Button
+        title='Press to Send Notification'
+        onPress={async () => {
+          await sendPushNotification(expoPushToken);
+        }}
+      />
+      <Button title='Permission Notification' onPress={askPermission} />
     </SafeAreaView>
   );
 }
